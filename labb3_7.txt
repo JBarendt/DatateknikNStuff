@@ -1,0 +1,74 @@
+.global process_switches
+.text
+.ent process_switches
+process_switches:
+	addi r1,r1,-4
+	sw r15,r1,r0
+	lwi r6,r0, 0x40020000
+	add r5,r0,r0
+	addi r7,r0,8
+	addi r10,r0,1
+shift: beqi r7, arg_ready
+	nop
+	andi r9, r6,1
+	add r5,r5,r5
+	add r5,r5,r9
+	sra r6,r6
+	rsub r7,r10,r7
+	brid shift
+	nop
+arg_ready: rsub r11,r5,r6
+	bgei r11, moreThan
+	blti r11, lessThan
+
+moreThan: 
+	addi r12, r0, -1
+	swi r12,r0, 0x40010000
+	rtsd r15,8
+	nop
+lessThan:
+	swi r0,r0, 0x40010000
+	rtsd r15,8
+	nop
+.end process_switches
+
+
+------------------------------------------------------------
+
+.global process_switches
+.text
+.ent process_switches
+process_switches:
+	addi r1,r1,-4
+	sw r15,r1,r0
+	lwi r6,r0, 0x40020000
+	add r5,r0,r0
+	addi r7,r0,8
+	addi r10,r0,1
+	addi r11,r0,0x44A00000
+	add r8,r0,7
+	add r12,r0,r0
+
+shift: beqi r7, arg_ready
+	nop
+	andi r9, r6,1
+	add r5,r5,r5
+	add r5,r5,r9
+	sra r6,r6
+	rsub r7,r10,r7
+	brid shift
+	nop
+arg_ready: and r9,r6,r5
+display: beqi r8, end
+	andi r12,r9,1
+	sra r9,r9
+	lwi r13, r12, display_codes
+	sw  r13, r11, r8
+	rsub r8,r10,r8
+	brid display
+
+end:
+	rtsd r15,8
+.end process_switches
+
+-------------------------------------------------------------------------------------------
