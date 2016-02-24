@@ -94,3 +94,50 @@ displayone:
 	nop
 .end process_switches
 -------------------------------------------------------------------------------------------
+
+.global process_switches
+.text
+.ent process_switches
+process_switches:
+	addi r1,r1,-4 // Stack frame
+	swi r15,r1,0 // Callback adress
+	addi r6,r0,0x44A00000 // Lägg adressen till förstaa displayen i r6
+	addi r8, r0, 10 // sätt r8 till 10
+	add r9, r0, r0 //sätt r9 till 0
+
+	lwi r5,r0, 0x40020000 //Läs in switcharna
+	brlid r15, number_of_ones // Räkna ut antalet 1or (lägger in i r3)
+	rsub r7, r8, r3 //Antalet 1orn - 10 ger oss possitivt om fler än 10 switchar eller - om lägre
+	blti r7, LESSTHANTEN //Annars till LESSTHANTEN
+
+
+ABOVETEN:
+	rsub r7, r8, r3
+	add r7,r7,r7
+	add r7,r7,r7
+	lwi r13, r7, display_codes // Hämta 2a siffran, ex 12-10 = 2 hämta 2
+	sw r13, r0, r6 //Sätt displayen till r7
+	addi r6,r6,4 //Lägg till 4 bitar för vi ska till nästa display
+	addi r7, r0, 4 // efter som vi max har 16 så sätter vi display 2 till 1
+	lwi r13, r7, display_codes // Hämta 1a
+	sw r13, r0, r6 //Displaya 1an på display 2
+	lwi r15,r1,0
+	addi r1,r1,4
+	rtsd r15,8
+
+LESSTHANTEN:
+	rsub r7, r8, r3
+	bgei r7, ABOVETEN
+	add r3,r3,r3
+	add r3,r3,r3
+	lwi r13, r3, display_codes //Hämta siffran
+	sw r13, r0, r6 // Visa den på dispalyen
+	addi r6,r6,4 //Lägg till 4 bitar för vi ska till nästa display
+	addi r7, r0, 0 // efter som vi max har 16 så sätter vi display 2 till 1
+	lwi r13, r7, display_codes // Hämta 1a
+	sw r13, r0, r6 //Displaya 1an på display 2
+	lwi r15,r1,0
+	addi r1,r1,4
+	rtsd r15,8  // Stick tbx
+
+.end process_switches
