@@ -53,36 +53,44 @@ end: brid process_switches
 .text
 .ent process_switches
 process_switches:
-	addi r1,r1,-4
-	sw r15,r1,r0
-	lwi r6,r0, 0x40020000
-	add r5,r0,r0
-	addi r7,r0,8
-	addi r10,r0,1
-	addi r11,r0,0x44A00000
-	add r8,r0,7
-	add r12,r0,r0
+	addi r1,r1,-4 //Stackframe på 4 bitar
+	sw r15,r1,r0 //Callback adress
+	lwi r6,r0, 0x40020000 //Läs in switcharna
+	add r5,r0,r0 //Lägg in en 0a i r5
+	addi r7,r0,8 // lägg in en 8a i r7
+	addi r10,r0,1 //1a i r10
+	addi r11,r0,0x44A00000 // Lagra adressen till displayerna
+	addi r8,r0,7 // Lägg in en 7a i r8
+	add r12,r0,r0 // r12 vill vara 0
 
-shift: beqi r7, arg_ready
+shift: beqi r7, arg_ready //Medens r7 > 0, annars hoppa till arg_ready
 	nop
-	andi r9, r6,1
-	add r5,r5,r5
-	add r5,r5,r9
-	sra r6,r6
-	rsub r7,r10,r7
-	brid shift
+	andi r9, r6,1 //Kolla om LSB är 1 eller 0 lägg den i r9
+	add r5,r5,r5 //Dubble r5 efter varje call för binärt o så du vet
+	add r5,r5,r9 //Lägg in biten från r9
+	sra r6,r6 //Shifta 1 steg
+	rsub r7,r10,r7 // Gör detta 7  till gånger så har vi delat upp alla switchar 8 vänster i r6 och 8 höger i r5
+	brid shift //Hoppas till början av loopen
 	nop
-arg_ready: and r9,r6,r5
-display: beqi r8, end
-	andi r12,r9,1
-	sra r9,r9
-	lwi r13, r12, display_codes
-	sw  r13, r11, r8
-	rsub r8,r10,r8
-	brid display
+arg_ready: and r9,r6,r5 //Anda höger o vänster så får vi om de är samma, r9 blir resultatet av anden
+display: add r18,r8,r8 //Mega hax för hoppa 4 bitar per iteration part 1/2 (4 bitar för ny display)
+	add r18, r18, r18  //Mega hax för hoppa 4 bitar per iteration part 2/2
+	andi r12,r9,1 //Kolla om LSB är 1 eller 0, lägg in resultatet i r12
+	bnei r12, displayone
+	beqi r12, after
+after:	sra r9,r9 //Shifta r9 1 steg så vi kan kolla nästa bit
+	lwi r13, r12, display_codes //Hämta antingen 1 eller 0 beroende på vad vi fick
+	sw  r13, r11, r18 // Visa den på displayen, (minskar med 1 display varje gång aka 4 bitar)
+	rsub r8, r10, r8 //Ta bort 1 från r8
+	bgeid r8, display // Hoppa tillbaka i loopen om r8 är större än 0 så vi får alla displayer/bitar
+	lwi r15,r1,0
+	addi r1,r1,4
+	rtsd r15,8 // Stick tillbaka från subrutinen
+	nop
 
-end:
-	rtsd r15,8
+displayone:
+	addi r12,r12,4
+	brid after
+	nop
 .end process_switches
-
 -------------------------------------------------------------------------------------------
