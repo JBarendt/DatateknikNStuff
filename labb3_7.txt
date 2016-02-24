@@ -2,34 +2,48 @@
 .text
 .ent process_switches
 process_switches:
-	addi r1,r1,-4
-	sw r15,r1,r0
-	lwi r6,r0, 0x40020000
-	add r5,r0,r0
-	addi r7,r0,8
-	addi r10,r0,1
-shift: beqi r7, arg_ready
+	addi r1,r1,-4 //Resaverar stackframe
+	sw r15,r1,r0 //Callback minne
+	lwi r6,r0, 0x40020000 //Läser switchar till r6
+	add r5,r0,r0 //Nollställ r5
+	addi r7,r0,8 //i i en i loop ish
+	addi r10,r0,1 //Bra med en 1a o så
+shift: beqi r7, arg_ready //När r7 är över 0 kör detta, annars hoppa till arg_ready
 	nop
-	andi r9, r6,1
-	add r5,r5,r5
-	add r5,r5,r9
-	sra r6,r6
-	rsub r7,r10,r7
-	brid shift
+	andi r9, r6,1 //Kolla om LSB är 1 eller 0 lägg den i r9
+	add r5,r5,r5 //Dubble r5 efter varje call för binärt o så du vet
+	add r5,r5,r9 //Lägg in biten från r9
+	sra r6,r6 //Shifta 1 steg
+	rsub r7,r10,r7 // Gör detta 7  till gånger så har vi delat upp alla switchar 8 vänster i r6 och 8 höger i r5
+	brid shift //Hoppas till början av loopen
 	nop
-arg_ready: rsub r11,r5,r6
-	bgei r11, moreThan
-	blti r11, lessThan
+arg_ready: rsub r11,r5,r6 //Ta höger - vänster lägg i r11
+	bgei r11, moreThan // Om r11 är possitiv lägg hoppa till moreThan
+	blti r11, lessThan // Annars stick till lessThan
+	lwi r15,r1,0
+	addi r1,r1,4
+	rtsd r15,8
+	//rtsd r15,8
 
-moreThan: 
-	addi r12, r0, -1
-	swi r12,r0, 0x40010000
+moreThan:
+	addi r12, r0, -1 // -1 = 0xFFFFFF så lägg det i r12
+	swi r12,r0, 0x40010000 //Lägg in 0xFFFFF hos lamporna så lyser dem fint
+	//rtsd r15,8 //Avsluta subrutinen här så vi inte kör lessThan efteråt
+	lwi r15,r1,0
+	addi r1,r1,4
 	rtsd r15,8
 	nop
+
 lessThan:
-	swi r0,r0, 0x40010000
+	addi r12, r0, 0
+	swi r12,r0, 0x40010000 //Släck alla lampor
+	//rtsd r15,8 // We're done lets go home
+	lwi r15,r1,0
+	addi r1,r1,4
 	rtsd r15,8
 	nop
+end: brid process_switches
+
 .end process_switches
 
 
